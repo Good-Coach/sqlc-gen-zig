@@ -154,7 +154,7 @@ return try out.toOwnedSlice();
 {{- if .Array }}
 var row_{{ .Name }} = std.ArrayList({{ .ZigID }}).init(allocator);
 defer row_{{ .Name }}.deinit();
-var row_{{ .Name }}_iter = row.get(pg.Iterator({{ if .Enum }}[]const u8{{ else }}{{ fieldScanType . }}{{ end }}), {{ .Index }});
+var row_{{ .Name }}_iter = try row.get(pg.Iterator({{ if .Enum }}[]const u8{{ else }}{{ fieldScanType . }}{{ end }}), {{ .Index }});
 while (row_{{ .Name }}_iter.next()) |item| {
     {{- if .Enum }}
     try row_{{ .Name }}.append(std.meta.stringToEnum({{ .ZigID }}, item) orelse unreachable);
@@ -200,16 +200,16 @@ while (row_{{ .Name }}_iter.next()) |item| {
 {{/* Scans a field object without duplicating the value */}}
 {{- define "scanNoAlloc" -}}
 {{- if .Array -}}
-var row_{{ .Name }} = row.get(pg.Iterator({{ if .Enum }}[]const u8{{ else }}{{ fieldScanType . }}{{ end }}), {{ .Index }});
+var row_{{ .Name }} = try row.get(pg.Iterator({{ if .Enum }}[]const u8{{ else }}{{ fieldScanType . }}{{ end }}), {{ .Index }});
 {{- else -}}
-const row_{{ .Name }} = row.get({{ fieldScanType . }}, {{ .Index }});
+const row_{{ .Name }} = try row.get({{ fieldScanType . }}, {{ .Index }});
 {{- end -}}
 {{- end -}}
 
 {{/* Scans a non-scalar Field object */}}
 {{- define "scanNonScalarAlloc" -}}
 {{- if .Nullable }}
-const maybe_{{ .Name }} = row.get(?{{ .ZigType }}, {{ .Index }});
+const maybe_{{ .Name }} = try row.get(?{{ .ZigType }}, {{ .Index }});
 const row_{{ .Name }}: ?{{ .ZigType }} = blk: {
     if (maybe_{{ .Name }}) |field| {
         break :blk try allocator.dupe({{ allocType . }}, field);
@@ -220,14 +220,14 @@ errdefer if (row_{{ .Name }}) |field| {
     allocator.free(field);
 };
 {{- else -}}
-const row_{{ .Name }} = try allocator.dupe({{ allocType . }}, row.get({{ fieldScanType . }}, {{ .Index }}));
+const row_{{ .Name }} = try allocator.dupe({{ allocType . }}, try row.get({{ fieldScanType . }}, {{ .Index }}));
 errdefer allocator.free(row_{{ .Name }});
 {{- end -}}
 {{- end -}}
 
 {{/* Scans a pg.Cidr Field object */}}
 {{- define "scanPGCidrAlloc" -}}
-const {{ .Name }}_cidr = row.get({{ if .Nullable }}?{{ end }}pg.Cidr, {{ .Index }});
+const {{ .Name }}_cidr = try row.get({{ if .Nullable }}?{{ end }}pg.Cidr, {{ .Index }});
 {{- if .Nullable }}
 const row_{{ .Name }}: ?pg.Cidr = blk: {
     if ({{ .Name }}_cidr) |cidr| {
@@ -254,7 +254,7 @@ errdefer allocator.free(row_{{ .Name }}.address);
 
 {{/* Scans a pg.Numeric Field object */}}
 {{- define "scanPGNumericAlloc" -}}
-const {{ .Name }}_numeric = row.get({{ if .Nullable }}?{{ end }}pg.Numeric, {{ .Index }});
+const {{ .Name }}_numeric = try row.get({{ if .Nullable }}?{{ end }}pg.Numeric, {{ .Index }});
 {{- if .Nullable }}
 const row_{{ .Name }}: ?pg.Numeric = blk: {
     if ({{ .Name }}_numeric) |numeric| {
