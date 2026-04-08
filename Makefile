@@ -38,3 +38,19 @@ patch-sqlc-yaml-%:
 clean:
 	rm -rf bin/ dist/
 	rm -rf tests/e2e/sqlc.yaml tests/e2e/src/gen
+	rm -f tests/zig015-compile/sqlc.yaml
+
+# Zig 0.15 compile-only test (no Docker needed)
+compile-test: build patch-sqlc-yaml-zig015 gen-compile-test run-compile-test
+
+patch-sqlc-yaml-zig015:
+	cat "$(CURDIR)/tests/zig015-compile/sqlc.template.yaml" | \
+		sed 's|{{PLUGIN_PATH}}|$(PLUGIN_FILE)|g' | \
+		sed 's|{{PLUGIN_SHA256}}|$(shell sha256sum "$(PLUGIN_FILE)" | cut -d ' ' -f 1)|g' \
+		> "$(CURDIR)/tests/zig015-compile/sqlc.yaml"
+
+gen-compile-test:
+	cd tests/zig015-compile && $(SQLC) generate
+
+run-compile-test:
+	cd tests/zig015-compile && $(ZIG) build check

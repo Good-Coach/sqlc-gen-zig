@@ -1,0 +1,32 @@
+version: '2'
+plugins:
+- name: zig
+  wasm:
+    url: file://{{PLUGIN_PATH}}
+    sha256: {{PLUGIN_SHA256}}
+sql:
+- schema: src/schema/schema.sql
+  queries: src/schema/queries
+  engine: postgresql
+  codegen:
+  # 1. Managed allocations (default)
+  - out: src/gen/managed
+    plugin: zig
+    options:
+      public_query_strings: true
+  # 2. Unmanaged allocations
+  - out: src/gen/unmanaged
+    plugin: zig
+    options:
+      unmanaged_allocations: true
+  # 3. Managed + pg_error_unions
+  - out: src/gen/unions
+    plugin: zig
+    options:
+      pg_error_unions: true
+  # 4. Unmanaged + pg_error_unions (the combo that was broken)
+  - out: src/gen/unmanaged_unions
+    plugin: zig
+    options:
+      unmanaged_allocations: true
+      pg_error_unions: true
