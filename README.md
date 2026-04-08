@@ -1,4 +1,6 @@
-# sqlc-gen-zig
+# sqlc-gen-zig (Good-Coach fork)
+
+> **This is an updated fork of [tinyzimmer/sqlc-gen-zig](https://github.com/tinyzimmer/sqlc-gen-zig) with fixes for Zig 0.15+ compatibility.** The upstream plugin generates code that triggers compile errors under Zig 0.15's stricter variable shadowing rules. This fork resolves those issues.
 
 A Zig code generator for [sqlc](https://sqlc.dev/).
 
@@ -6,7 +8,7 @@ Currently only supports PostgreSQL and SQLite.
 
 ## Usage
 
-Head over to the [releases](https://github.com/tinyzimmer/sqlc-gen-zig/releases/latest) for instructions on how to configure your `sqlc.yaml`.
+Head over to the [releases](https://github.com/Good-Coach/sqlc-gen-zig/releases/latest) for instructions on how to configure your `sqlc.yaml`.
 Example projects can be found in the [examples/](examples/) directory.
 
 ### Configuration

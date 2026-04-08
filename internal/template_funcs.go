@@ -188,7 +188,7 @@ func postgresqlTemplateFuncs(_ *template.Template) template.FuncMap {
 			var out strings.Builder
 			out.WriteString("self: Self")
 			if conf.UnmanagedAllocations && !conf.UseContext {
-				if q.RequiresAllocations() {
+				if q.RequiresAllocations() || conf.PGErrorUnions {
 					out.WriteString(", allocator: Allocator")
 				}
 			}

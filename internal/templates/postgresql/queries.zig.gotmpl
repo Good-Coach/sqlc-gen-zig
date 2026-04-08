@@ -114,8 +114,10 @@ pub fn Querier(comptime T: type) type {
         {{- else }}
         pub fn {{ $query.MethodName }}({{ queryFuncArgs $conf $query }}) !{{ if $conf.PGErrorUnions }}{{ errorUnionType $query }}{{ else }}{{ if isManyQuery $query }}[]{{ end }}{{ queryReturnType $query }}{{ end }} {
         {{- end }}
-            {{- if or (and (and $query.RequiresAllocations (not $conf.UnmanagedAllocations)) (not $conf.UseContext)) (and $conf.PGErrorUnions (not $conf.UseContext)) }}
+            {{- if and (not $conf.UnmanagedAllocations) (not $conf.UseContext) }}
+            {{- if or $query.RequiresAllocations $conf.PGErrorUnions }}
             const allocator = self.allocator;
+            {{- end }}
             {{- end }}
             var conn: *pg.Conn = blk: {
                 if (T == *pg.Pool) {
