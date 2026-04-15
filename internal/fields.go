@@ -116,6 +116,8 @@ func postgresqlType(dbType string) string {
 		return "[]u8"
 	case "ltree", "lquery", "ltxtquery":
 		return "[]const u8"
+	case "vector", "public.vector":
+		return "[]const u8" // pgvector - stored as text representation
 	default:
 		return ""
 	}
