@@ -96,6 +96,8 @@ func postgresqlType(dbType string) string {
 		return "bool"
 	case "json", "jsonb":
 		return "[]const u8"
+	case "vector":
+		return "[]const u8"
 	case "bytea", "blob", "pg_catalog.bytea":
 		return "[]u8"
 	case "date":

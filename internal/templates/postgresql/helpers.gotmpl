@@ -88,7 +88,7 @@ return .{
         .__allocator = allocator,
         {{- end }}
         {{- range $idx, $field := $query.Ret.Struct.Fields }}
-        .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(){{ end }},
+        .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(allocator){{ end }},
         {{- end }}
     }
 };
@@ -98,7 +98,7 @@ return .{
     .__allocator = allocator,
     {{- end }}
     {{- range $idx, $field := $query.Ret.Struct.Fields }}
-    .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(){{ end }},
+    .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(allocator){{ end }},
     {{- end }}
 };
 {{- end }}
@@ -111,30 +111,30 @@ return {{ if $conf.PGErrorUnions }}.{ .{{ queryReturnID $conf $query }} = row_{{
 {{- define "scanManyQueryAlloc" -}}
 {{- $query := .Query -}}
 {{- $conf := .Config -}}
-var out = std.ArrayList({{ queryReturnType $query }}).init(allocator);
-defer out.deinit();
+var out: std.ArrayList({{ queryReturnType $query }}) = .empty;
+defer out.deinit(allocator);
 while (try result.next()) |row| {
     {{- include "scanRowAlloc" $query | indent 4 -}}
     {{- if $query.Ret.Struct }}
-    try out.append(.{
+    try out.append(allocator, .{
         {{- if hasNonScalarFields $query.Ret.Struct }}
         .__allocator = allocator,
         {{- end }}
         {{- range $idx, $field := $query.Ret.Struct.Fields }}
-        .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(){{ end }},
+        .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(allocator){{ end }},
         {{- end }}
     });
     {{- else }}
-    try out.append(row_{{ $query.Ret.Field.Name }});
+    try out.append(allocator, row_{{ $query.Ret.Field.Name }});
     {{- end }}
 }
 {{- "\n" }}
 {{- if $conf.PGErrorUnions }}
 return .{
-    .{{ queryReturnID $conf $query }} = try out.toOwnedSlice(),
+    .{{ queryReturnID $conf $query }} = try out.toOwnedSlice(allocator),
 };
 {{- else }}
-return try out.toOwnedSlice();
+return try out.toOwnedSlice(allocator);
 {{- end }}
 {{- end -}}
 
@@ -152,16 +152,16 @@ return try out.toOwnedSlice();
 {{/* Scans a single Field object from a query */}}
 {{- define "scanValueAlloc" -}}
 {{- if .Array }}
-var row_{{ .Name }} = std.ArrayList({{ .ZigID }}).init(allocator);
-defer row_{{ .Name }}.deinit();
+var row_{{ .Name }}: std.ArrayList({{ .ZigID }}) = .empty;
+defer row_{{ .Name }}.deinit(allocator);
 var row_{{ .Name }}_iter = try row.get(pg.Iterator({{ if .Enum }}[]const u8{{ else }}{{ fieldScanType . }}{{ end }}), {{ .Index }});
 while (row_{{ .Name }}_iter.next()) |item| {
     {{- if .Enum }}
-    try row_{{ .Name }}.append(std.meta.stringToEnum({{ .ZigID }}, item) orelse unreachable);
+    try row_{{ .Name }}.append(allocator, std.meta.stringToEnum({{ .ZigID }}, item) orelse unreachable);
     {{- else if eq .ZigType "pg.Cidr" }}
     const address = try allocator.dupe(u8, item.address);
     errdefer allocator.free(address);
-    try row_{{ .Name }}.append(pg.Cidr{
+    try row_{{ .Name }}.append(allocator, pg.Cidr{
         .address = address,
         .netmask = item.netmask,
         .family = item.family,
@@ -169,7 +169,7 @@ while (row_{{ .Name }}_iter.next()) |item| {
     {{- else if eq .ZigType "pg.Numeric" }}
     const digits = try allocator.dupe(u8, item.digits);
     errdefer allocator.free(digits);
-    try row_{{ .Name }}.append(pg.Numeric{
+    try row_{{ .Name }}.append(allocator, pg.Numeric{
         .number_of_digits = item.number_of_digits,
         .weight = item.weight,
         .sign = item.sign,
@@ -179,9 +179,9 @@ while (row_{{ .Name }}_iter.next()) |item| {
     {{- else if isNonScalar . }}
     const value = try allocator.dupe({{ allocType . }}, item);
     errdefer allocator.free(value);
-    try row_{{ .Name }}.append(value);
+    try row_{{ .Name }}.append(allocator, value);
     {{- else }}
-    try row_{{ .Name }}.append(item);
+    try row_{{ .Name }}.append(allocator, item);
     {{- end }}
 }
 {{- else if .Enum }}
