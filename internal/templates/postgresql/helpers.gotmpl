@@ -88,7 +88,7 @@ return .{
         .__allocator = allocator,
         {{- end }}
         {{- range $idx, $field := $query.Ret.Struct.Fields }}
-        .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(){{ end }},
+        .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(allocator){{ end }},
         {{- end }}
     }
 };
@@ -98,7 +98,7 @@ return .{
     .__allocator = allocator,
     {{- end }}
     {{- range $idx, $field := $query.Ret.Struct.Fields }}
-    .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(){{ end }},
+    .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(allocator){{ end }},
     {{- end }}
 };
 {{- end }}
@@ -121,7 +121,7 @@ while (try result.next()) |row| {
         .__allocator = allocator,
         {{- end }}
         {{- range $idx, $field := $query.Ret.Struct.Fields }}
-        .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(){{ end }},
+        .{{ $field.Name }} = {{ if $field.Array}}try {{ end }}row_{{ $field.Name }}{{ if $field.Array}}.toOwnedSlice(allocator){{ end }},
         {{- end }}
     });
     {{- else }}
