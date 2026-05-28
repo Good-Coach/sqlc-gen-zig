@@ -35,7 +35,7 @@ changelog:
 
 release:
   github:
-    owner: tinyzimmer
+    owner: Good-Coach
     name: sqlc-gen-zig
   header: |
     ## sqlc-gen-zig ({{ .Date }})
@@ -47,6 +47,6 @@ release:
     plugins:
     - name: zig
       wasm:
-        url: https://github.com/tinyzimmer/sqlc-gen-zig/releases/download/{{ .Tag }}/sqlc-gen-zig.wasm
+        url: https://github.com/Good-Coach/sqlc-gen-zig/releases/download/{{ .Tag }}/sqlc-gen-zig.wasm
         sha256: {{ trimsuffix .Checksums "  sqlc-gen-zig.wasm\n" }}
     ```
