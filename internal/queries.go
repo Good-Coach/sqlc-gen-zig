@@ -76,6 +76,25 @@ func buildQueries(conf Config, req *plugin.GenerateRequest, structs []Struct) ([
 		if query.GetCmd() == metadata.CmdCopyFrom {
 			return nil, errors.New("Support for CopyFrom in Zig is not implemented")
 		}
+		gqOut, err := buildQuery(conf, req, structs, query)
+		if err != nil {
+			return nil, err
+		}
+		queries = append(queries, gqOut)
+	}
+	sort.Slice(queries, func(i, j int) bool { return queries[i].MethodName < queries[j].MethodName })
+	return queries, nil
+}
+
+// buildQuery converts one sqlc query; panics from type resolution are
+// recovered and re-raised as errors naming the query and source file so
+// authors can find the offending SQL without bisecting query files.
+func buildQuery(conf Config, req *plugin.GenerateRequest, structs []Struct, query *plugin.Query) (gqOut Query, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("query %s (%s): %v", query.GetName(), query.GetFilename(), r)
+		}
+	}()
 
 		gq := Query{
 			Cmd:        query.GetCmd(),
@@ -163,10 +182,7 @@ func buildQueries(conf Config, req *plugin.GenerateRequest, structs []Struct) ([
 			}
 		}
 
-		queries = append(queries, gq)
-	}
-	sort.Slice(queries, func(i, j int) bool { return queries[i].MethodName < queries[j].MethodName })
-	return queries, nil
+		return gq, nil
 }
 
 func paramsToStruct(conf Config, req *plugin.GenerateRequest, query *plugin.Query, params []*plugin.Parameter) *Struct {
