@@ -55,7 +55,10 @@ func zigDataType(req *plugin.GenerateRequest, column *plugin.Column) (typeName s
 		if enumType := enumType(req.GetCatalog(), dbType); enumType != "" {
 			return enumType, true
 		}
-		panic(fmt.Errorf("unsupported postgresql type: %s", dbType))
+		panic(fmt.Errorf(
+			"unsupported postgresql type %q for column %q (table %q) — hint: cast every sqlc.arg/narg used inside COALESCE/CASE, add an outer ::type cast to expression result columns, and avoid array params (use the jsonb_array_elements_text pattern)",
+			dbType, column.GetName(), dbDataType(column.GetTable()),
+		))
 	case "sqlite":
 		return sqliteType(dbType), false
 	default:
