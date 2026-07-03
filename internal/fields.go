@@ -118,6 +118,11 @@ func postgresqlType(dbType string) string {
 		return "[]u8"
 	case "ltree", "lquery", "ltxtquery":
 		return "[]const u8"
+	case "anyarray":
+		// sqlc mis-infers aggregate results over some columns (e.g. MAX(bigint)
+		// in GoodCoach's GetStaffStats) as anyarray; emit a string column,
+		// matching the committed GoodCoach model lineage.
+		return "[]const u8"
 	default:
 		return ""
 	}
